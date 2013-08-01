@@ -2,6 +2,7 @@
 # http://docs.python.org/2/library/rlcompleter.html#module-rlcompleter
 # http://geoffford.wordpress.com/2009/01/20/python-repl-enhancement/
 
+
 try:
     import readline
     import rlcompleter
@@ -23,19 +24,25 @@ else:
                                   os.path.join(os.environ['HOME'], 
                                                '.pythonhistory'))
 
-    success = False
+
     try:
         readline.read_history_file(history_file)
-        success = True
-    except IOError:
-        try:
-            open(history_file, 'a').close()
-            success = True
-        except IOError as e:
-            print("Failed to open history file {0}: {1}.".format(history_file, e.strerror))
+    except IOError as e:
+        if e.errno != 2:
+            # [Errno 2] happens when the file doesn't exist yet, and is normal.
+            print("Could not open history file ({0}) for reading: {1}".format(
+                history_file, e))
 
-    if success:
-        atexit.register(readline.write_history_file, history_file)
-        print('Persistent session history and tab completion are enabled.')
-    else:
-        print("Tab completion is enabled.")
+    def write_history_file(history_file):
+        """Wrap readline.write_history_file and add error handling.
+
+        """
+        try:
+            readline.write_history_file(history_file)
+        except IOError as e:
+            print("Could not open history file ({0}) for writing: {1}".format(
+                history_file, e))
+
+    atexit.register(write_history_file, history_file)
+
+    print('Persistent session history and tab completion are enabled.')
