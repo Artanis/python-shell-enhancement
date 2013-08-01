@@ -23,11 +23,19 @@ else:
                                   os.path.join(os.environ['HOME'], 
                                                '.pythonhistory'))
 
-    if os.path.isfile(history_file):
+    success = False
+    try:
         readline.read_history_file(history_file)
+        success = True
+    except IOError:
+        try:
+            open(history_file, 'a').close()
+            success = True
+        except IOError as e:
+            print("Failed to open history file {0}: {1}.".format(history_file, e.strerror))
+
+    if success:
+        atexit.register(readline.write_history_file, history_file)
+        print('Persistent session history and tab completion are enabled.')
     else:
-        open(history_file, 'a').close()
-
-    atexit.register(readline.write_history_file, history_file)
-
-    print('Persistent session history and tab completion are enabled.')
+        print("Tab completion is enabled.")
